@@ -2,20 +2,21 @@
 
 A lightweight, single-file Markdown editor with live preview, Mermaid diagrams, and KaTeX formula support.
 
-![Editor Preview](https://img.shields.io/badge/version-1.0.0-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![HTML](https://img.shields.io/badge/built%20with-HTML%2FJS-orange)
+![Editor Preview](https://img.shields.io/badge/version-2.0.0-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![HTML](https://img.shields.io/badge/built%20with-HTML%2FJS-orange)
 
 ---
 
 ## ✨ Features
 
 - **Live Preview** — See rendered output as you type
+- **Formula Picker** — Visual popup with 90+ categorized LaTeX formulas (Ctrl+M)
 - **Mermaid Diagrams** — Flowcharts, sequence diagrams, and more
 - **KaTeX Formulas** — Inline `$...$` and block `$$...$$` LaTeX support
 - **Syntax Highlighting** — JavaScript, Python, CSS code blocks
-- **Dark / Light Mode** — Toggle with one click
+- **Dark / Light Mode** — Toggle with one click, full KaTeX dark mode support
 - **Auto-save** — Content saved to localStorage automatically
 - **Export** — Download as `.md` or `.html`
-- **Keyboard Shortcuts** — Ctrl+B, Ctrl+I, Ctrl+K, Ctrl+S
+- **Keyboard Shortcuts** — Ctrl+B, Ctrl+I, Ctrl+K, Ctrl+S, Ctrl+M
 - **Responsive** — Works on desktop and mobile
 - **Zero dependencies** — Single `index.html` file, no install needed
 
@@ -46,7 +47,37 @@ No Node.js, no npm, no build step required.
 | `Ctrl+K` | Insert Link |
 | `Ctrl+H` | Heading |
 | `Ctrl+S` | Save |
+| `Ctrl+M` | Open Formula Picker |
 | `Tab` | Indent |
+| `ESC` | Close any modal |
+
+---
+
+## 🔢 Formula Picker
+
+Press **Ctrl+M** or click **Σ Formula** in the toolbar to open the formula picker.
+
+### Categories
+
+| Category | Examples |
+|----------|---------|
+| **Basic** | Fraction, square root, power, logarithm, infinity |
+| **Trigonometry** | sin, cos, tan, cot, sec, csc, arcsin, sinh, Pythagorean identity |
+| **Integral & Derivative** | Definite/indefinite integrals, partial derivatives, gradient, Laplacian |
+| **Sum & Limit** | Summation, product, limits, Taylor series, geometric series |
+| **Matrix & Vector** | 2×2/3×3 matrices, determinant, dot/cross product, eigenvalue |
+| **Statistics** | Mean, std. deviation, normal distribution, binomial, expected value |
+| **Logic & Sets** | ∀ ∃ ∈ ⊆ ∪ ∩ implication, biconditional, negation |
+| **Complex Numbers** | Euler's formula and identity, modulus, argument, conjugate |
+
+### How it works
+
+1. Open the picker with **Ctrl+M** or the toolbar button
+2. Select a category tab
+3. Click a formula card — it appears in the live preview
+4. Edit the LaTeX code directly if needed
+5. Choose **Inline** (`$...$`) or **Block** (`$$...$$`) mode
+6. Click **Insert** — the formula is placed at the cursor position
 
 ---
 
@@ -79,12 +110,20 @@ $$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$
 ## 🛠️ Built With
 
 - [Mermaid.js v11](https://mermaid.js.org/) — Diagram rendering
-- [KaTeX](https://katex.org/) — Math formula rendering
+- [KaTeX 0.16.9](https://katex.org/) — Math formula rendering
 - Vanilla HTML / CSS / JavaScript
 
 ---
 
 ## 🌟 Advanced Features
+
+### Formula Picker (V2)
+- 90+ formulas across 8 categories
+- Live KaTeX preview before inserting
+- Editable LaTeX input field
+- Inline (`$...$`) and block (`$$...$$`) mode toggle
+- Full dark mode support — all KaTeX symbols visible in both themes
+- Keyboard accessible: Ctrl+M to open, ESC to close
 
 ### Turkish Character Support
 - Full Turkish character support in Mermaid diagrams
@@ -108,7 +147,7 @@ $$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$
 - Map-based storage preserves newlines
 - No HTML encoding issues
 - Fast rendering with Mermaid v11
-- Error handling with Turkish messages
+- Error handling with descriptive messages
 
 ---
 
@@ -119,6 +158,7 @@ $$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$
 - **Map-based Mermaid storage**: Prevents newline loss
 - **DOM API parsing**: Preserves whitespace
 - **Debounced rendering**: Optimized performance
+- **Modal system**: Unified overlay pattern for Table Builder and Formula Picker
 
 ### Browser Compatibility
 - Chrome 90+
@@ -131,6 +171,27 @@ $$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$
 - Auto-save every 30 seconds
 - Lazy Mermaid rendering
 - Efficient syntax highlighting
+
+---
+
+## 📋 Changelog
+
+### V2.0.0
+- ✅ Formula Picker popup with 90+ formulas across 8 categories
+- ✅ Live KaTeX preview inside the picker
+- ✅ Inline / Block mode toggle
+- ✅ Ctrl+M keyboard shortcut
+- ✅ Full dark mode KaTeX rendering fix
+
+### V1.0.0
+- ✅ Single file editor with live preview
+- ✅ Dark / Light mode
+- ✅ localStorage auto-save
+- ✅ Export MD + HTML
+- ✅ KaTeX formula support
+- ✅ Mermaid graph + sequence diagrams
+- ✅ Table builder modal
+- ✅ Bullet + numbered lists
 
 ---
 
@@ -147,5 +208,3 @@ Feel free to submit issues and enhancement requests!
 ---
 
 **Made with ❤️ for the Markdown community**
-Feel free to use and modify as needed!
-
