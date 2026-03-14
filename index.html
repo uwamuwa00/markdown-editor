@@ -390,8 +390,16 @@
             background-color: var(--bg-tertiary);
         }
 
-        [data-theme="dark"] .preview-content .katex {
-            color: var(--text-primary);
+        [data-theme="dark"] .katex,
+        [data-theme="dark"] .katex * {
+            color: var(--text-primary) !important;
+        }
+        [data-theme="dark"] .katex .frac-line {
+            border-bottom-color: var(--text-primary) !important;
+            background: var(--text-primary) !important;
+        }
+        [data-theme="dark"] .katex svg path {
+            fill: var(--text-primary) !important;
         }
 
         .keyword { color: #c678dd; font-weight: 600; }
@@ -714,7 +722,7 @@
             </div>
             <div class="toolbar-group">
                 <button onclick="insertMermaid()" title="Mermaid Diagram">📊</button>
-                <button onclick="insertLatex()" title="LaTeX Formula">∑</button>
+                <button onclick="openFormulaPopup()" title="Insert Formula (Ctrl+M)">Σ Formula</button>
             </div>
             <div class="toolbar-group">
                 <button onclick="exportMarkdown()" title="Export Markdown">📄 MD</button>
@@ -770,12 +778,12 @@
     <div class="modal-overlay" id="tableModal">
         <div class="modal">
             <div class="modal-header">
-                <h2 class="modal-title">Tablo Oluştur</h2>
+                <h2 class="modal-title">Create Table</h2>
             </div>
             <div class="modal-body">
                 <div class="table-controls">
                     <div class="control-group">
-                        <label class="control-label">Sütun Sayısı</label>
+                        <label class="control-label">Columns</label>
                         <div class="control-input">
                             <button class="control-btn" onclick="updateTableSize('cols', -1)">−</button>
                             <span class="control-value" id="colCount">3</span>
@@ -783,7 +791,7 @@
                         </div>
                     </div>
                     <div class="control-group">
-                        <label class="control-label">Satır Sayısı</label>
+                        <label class="control-label">Rows</label>
                         <div class="control-input">
                             <button class="control-btn" onclick="updateTableSize('rows', -1)">−</button>
                             <span class="control-value" id="rowCount">3</span>
@@ -793,8 +801,8 @@
                 </div>
 
                 <div class="add-buttons">
-                    <button class="add-btn" onclick="addRow()">+ Satır Ekle</button>
-                    <button class="add-btn" onclick="addCol()">+ Sütun Ekle</button>
+                    <button class="add-btn" onclick="addRow()">+ Add Row</button>
+                    <button class="add-btn" onclick="addCol()">+ Add Column</button>
                 </div>
 
                 <div class="table-preview">
@@ -804,8 +812,45 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeTableModal()">İptal</button>
-                <button class="btn-primary" onclick="insertTableToEditor()">Editöre Ekle</button>
+                <button class="btn-secondary" onclick="closeTableModal()">Cancel</button>
+                <button class="btn-primary" onclick="insertTableToEditor()">Insert</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formula Picker Modal -->
+    <div class="modal-overlay" id="formulaModal">
+        <div class="modal" style="max-width:700px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Σ Insert Formula</h2>
+            </div>
+            <div class="modal-body" style="padding:16px 24px;">
+                <div id="fp-tabs" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;"></div>
+                <div id="fp-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px;margin-bottom:16px;"></div>
+                <div id="fp-live" style="min-height:52px;border:1px dashed var(--border-color);border-radius:8px;display:flex;align-items:center;justify-content:center;padding:8px 16px;background:var(--bg-secondary);font-size:16px;margin-bottom:10px;">
+                    <span style="font-size:13px;color:var(--text-secondary);font-style:italic;">Select a formula — preview will appear here</span>
+                </div>
+                <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;">
+                    <textarea id="fp-input" rows="2"
+                        style="flex:1;padding:8px 11px;border:1px solid var(--border-color);border-radius:6px;font-family:Consolas,monospace;font-size:12px;background:var(--bg-secondary);color:var(--text-primary);resize:none;"
+                        placeholder="LaTeX code — select from a card or type manually..."
+                        oninput="fpLiveUpdate()"></textarea>
+                    <button id="fp-insert-btn" class="btn-primary"
+                        style="padding:9px 16px;border-radius:6px;border:none;cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap;align-self:stretch;opacity:0.4;cursor:default;"
+                        onclick="insertFormula()" disabled>Insert</button>
+                </div>
+                <div style="display:flex;align-items:center;gap:14px;font-size:12px;color:var(--text-secondary);">
+                    <span style="font-weight:600;">Mode:</span>
+                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+                        <input type="radio" name="fp-mode" value="inline" checked> Inline <code style="font-size:11px;background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;color:var(--accent-color);">$...$</code>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+                        <input type="radio" name="fp-mode" value="block"> Block <code style="font-size:11px;background:var(--bg-tertiary);padding:1px 4px;border-radius:3px;color:var(--accent-color);">$$...$$</code>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeFormulaPopup()">Close</button>
             </div>
         </div>
     </div>
@@ -1268,7 +1313,7 @@
                 // Header row
                 html += '<tr>';
                 for (let c = 0; c < this.currentCols; c++) {
-                    html += `<th>Başlık ${c + 1}</th>`;
+                    html += `<th>Header ${c + 1}</th>`;
                 }
                 html += '</tr>';
                 
@@ -1276,7 +1321,7 @@
                 for (let r = 0; r < this.currentRows; r++) {
                     html += '<tr>';
                     for (let c = 0; c < this.currentCols; c++) {
-                        html += `<td>Hücre ${r + 1}-${c + 1}</td>`;
+                        html += `<td>Cell ${r + 1}-${c + 1}</td>`;
                     }
                     html += '</tr>';
                 }
@@ -1301,7 +1346,7 @@
                 // Header row
                 markdown += '|';
                 for (let c = 0; c < this.currentCols; c++) {
-                    markdown += ` Başlık ${c + 1} |`;
+                    markdown += ` Header ${c + 1} |`;
                 }
                 markdown += '\n';
                 
@@ -1316,7 +1361,7 @@
                 for (let r = 0; r < this.currentRows; r++) {
                     markdown += '|';
                     for (let c = 0; c < this.currentCols; c++) {
-                        markdown += ` Hücre ${r + 1}-${c + 1} |`;
+                        markdown += ` Cell ${r + 1}-${c + 1} |`;
                     }
                     markdown += '\n';
                 }
@@ -1340,6 +1385,10 @@
             insertLatex() {
                 this.replaceSelection('$$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$$');
             }
+
+        /* ══════════════════════════════════════════
+           FORMULA PICKER — V2
+        ══════════════════════════════════════════ */
 
             replaceCurrentLine(newLine) {
                 const start = this.editor.value.lastIndexOf('\n', this.editor.selectionStart - 1) + 1;
@@ -1380,6 +1429,276 @@
         }
 
         let app;
+
+        /* ══════════════════════════════════════════
+           FORMULA PICKER — VERİTABANI & FONKSİYONLAR
+        ══════════════════════════════════════════ */
+        const FP_CATEGORIES = [
+            { id:'basic', label:'Basic', items:[
+                { label:'Fraction',        latex:'\\frac{a}{b}' },
+                { label:'Square root',     latex:'\\sqrt{x}' },
+                { label:'nth root',        latex:'\\sqrt[n]{x}' },
+                { label:'Power',           latex:'x^{n}' },
+                { label:'Subscript',       latex:'x_{i}' },
+                { label:'Power + sub',     latex:'x_{i}^{n}' },
+                { label:'Parentheses',     latex:'\\left( \\frac{a}{b} \\right)' },
+                { label:'Absolute value',  latex:'\\left| x \\right|' },
+                { label:'Base e',          latex:'e^{x}' },
+                { label:'Logarithm',       latex:'\\log_{b}(x)' },
+                { label:'Natural log',     latex:'\\ln(x)' },
+                { label:'Pi (π)',          latex:'\\pi' },
+                { label:'Infinity (∞)',    latex:'\\infty' },
+                { label:'Approx (≈)',      latex:'\\approx' },
+                { label:'Not equal',       latex:'\\neq' },
+                { label:'Interval',        latex:'a \\leq x \\leq b' },
+            ]},
+            { id:'trig', label:'Trigonometry', items:[
+                { label:'Sine',            latex:'\\sin(x)' },
+                { label:'Cosine',          latex:'\\cos(x)' },
+                { label:'Tangent',         latex:'\\tan(x)' },
+                { label:'Cotangent',       latex:'\\cot(x)' },
+                { label:'Secant',          latex:'\\sec(x)' },
+                { label:'Cosecant',        latex:'\\csc(x)' },
+                { label:'Arcsin',          latex:'\\arcsin(x)' },
+                { label:'Arccos',          latex:'\\arccos(x)' },
+                { label:'Arctan',          latex:'\\arctan(x)' },
+                { label:'sinh',            latex:'\\sinh(x)' },
+                { label:'cosh',            latex:'\\cosh(x)' },
+                { label:'tanh',            latex:'\\tanh(x)' },
+                { label:'Pythagorean',     latex:'\\sin^2(x)+\\cos^2(x)=1' },
+                { label:'Sum formula',     latex:'\\sin(a+b)=\\sin a\\cos b+\\cos a\\sin b' },
+                { label:'Deg → Rad',       latex:'\\theta=\\frac{\\pi}{180}\\cdot d' },
+            ]},
+            { id:'calculus', label:'Integral & Derivative', items:[
+                { label:'Derivative',      latex:'\\frac{d}{dx} f(x)' },
+                { label:'Partial deriv.',  latex:'\\frac{\\partial f}{\\partial x}' },
+                { label:'Second deriv.',   latex:'\\frac{d^2}{dx^2} f(x)' },
+                { label:'Indefinite int.', latex:'\\int f(x)\\,dx' },
+                { label:'Definite int.',   latex:'\\int_{a}^{b} f(x)\\,dx' },
+                { label:'Double int.',     latex:'\\iint_{D} f(x,y)\\,dx\\,dy' },
+                { label:'Triple int.',     latex:'\\iiint_{V} f\\,dV' },
+                { label:'Contour int.',    latex:'\\oint_{C} f\\,ds' },
+                { label:'Gradient',        latex:'\\nabla f' },
+                { label:'Divergence',      latex:'\\nabla \\cdot \\vec{F}' },
+                { label:'Curl',            latex:'\\nabla \\times \\vec{F}' },
+                { label:'Laplacian',       latex:'\\nabla^2 f' },
+            ]},
+            { id:'sum', label:'Sum & Limit', items:[
+                { label:'Summation',       latex:'\\sum_{i=1}^{n} x_i' },
+                { label:'Product',         latex:'\\prod_{i=1}^{n} x_i' },
+                { label:'Limit →∞',        latex:'\\lim_{x \\to \\infty} f(x)' },
+                { label:'Limit →0+',       latex:'\\lim_{x \\to 0^{+}} f(x)' },
+                { label:'Limit (general)', latex:'\\lim_{x \\to a} f(x)=L' },
+                { label:'Binomial coeff.', latex:'\\binom{n}{k}' },
+                { label:'Factorial',       latex:'n!' },
+                { label:'Taylor series',   latex:'f(x)=\\sum_{n=0}^{\\infty}\\frac{f^{(n)}(a)}{n!}(x-a)^n' },
+                { label:'Geometric series',latex:'\\sum_{n=0}^{\\infty} r^n=\\frac{1}{1-r}' },
+            ]},
+            { id:'matrix', label:'Matrix & Vector', items:[
+                { label:'2×2 Matrix',      latex:'\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}' },
+                { label:'3×3 Matrix',      latex:'\\begin{pmatrix} a & b & c \\\\ d & e & f \\\\ g & h & i \\end{pmatrix}' },
+                { label:'Determinant',     latex:'\\begin{vmatrix} a & b \\\\ c & d \\end{vmatrix}' },
+                { label:'Column vector',   latex:'\\begin{pmatrix} x \\\\ y \\\\ z \\end{pmatrix}' },
+                { label:'Dot product',     latex:'\\vec{a} \\cdot \\vec{b}' },
+                { label:'Cross product',   latex:'\\vec{a} \\times \\vec{b}' },
+                { label:'Norm',            latex:'\\|\\vec{a}\\|' },
+                { label:'Transpose',       latex:'A^{T}' },
+                { label:'Inverse',         latex:'A^{-1}' },
+                { label:'Eigenvalue',      latex:'A\\vec{v}=\\lambda\\vec{v}' },
+            ]},
+            { id:'stats', label:'Statistics', items:[
+                { label:'Mean',            latex:'\\bar{x}=\\frac{1}{n}\\sum_{i=1}^{n} x_i' },
+                { label:'Std. deviation',  latex:'\\sigma=\\sqrt{\\frac{\\sum(x_i-\\bar{x})^2}{n}}' },
+                { label:'Variance',        latex:'\\text{Var}(X)=E[(X-\\mu)^2]' },
+                { label:'Probability',     latex:'P(A)' },
+                { label:'Cond. prob.',     latex:'P(A \\mid B)' },
+                { label:'Expected value',  latex:'E[X]=\\sum x_i P(x_i)' },
+                { label:'Binomial dist.',  latex:'P(X=k)=\\binom{n}{k}p^k(1-p)^{n-k}' },
+                { label:'Normal dist.',    latex:'f(x)=\\frac{1}{\\sigma\\sqrt{2\\pi}}e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}' },
+            ]},
+            { id:'logic', label:'Logic & Sets', items:[
+                { label:'For all (∀)',     latex:'\\forall x \\in A' },
+                { label:'Exists (∃)',      latex:'\\exists x \\in A' },
+                { label:'Element of (∈)', latex:'x \\in A' },
+                { label:'Not element of', latex:'x \\notin A' },
+                { label:'Subset',          latex:'A \\subseteq B' },
+                { label:'Union (∪)',       latex:'A \\cup B' },
+                { label:'Intersection (∩)',latex:'A \\cap B' },
+                { label:'Complement',      latex:'A^{c}=U \\setminus A' },
+                { label:'Implication',     latex:'p \\Rightarrow q' },
+                { label:'Biconditional',   latex:'p \\Leftrightarrow q' },
+                { label:'And / Or',        latex:'p \\land q \\lor r' },
+                { label:'Negation',        latex:'\\lnot p' },
+            ]},
+            { id:'complex', label:'Complex Numbers', items:[
+                { label:'Complex number',  latex:'z=a+bi' },
+                { label:'Euler\'s formula',latex:'e^{i\\theta}=\\cos\\theta+i\\sin\\theta' },
+                { label:'Euler\'s identity',latex:'e^{i\\pi}+1=0' },
+                { label:'Modulus',         latex:'|z|=\\sqrt{a^2+b^2}' },
+                { label:'Argument',        latex:'\\arg(z)=\\arctan\\frac{b}{a}' },
+                { label:'Conjugate',       latex:'\\bar{z}=a-bi' },
+                { label:'Real part',       latex:'\\text{Re}(z)=a' },
+                { label:'Imaginary part',  latex:'\\text{Im}(z)=b' },
+            ]},
+        ];
+
+        let fpSelectedCard = null;
+
+        // Sekmeler oluştur
+        (function initFP() {
+            const tabBar = document.getElementById('fp-tabs');
+            FP_CATEGORIES.forEach((cat, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-secondary';
+                btn.style.cssText = 'padding:4px 11px;border-radius:20px;font-size:12px;font-weight:500;white-space:nowrap;cursor:pointer;';
+                if (i === 0) { btn.style.background = 'var(--accent-color)'; btn.style.color = '#fff'; btn.style.borderColor = 'var(--accent-color)'; }
+                btn.textContent = cat.label;
+                btn.dataset.catId = cat.id;
+                btn.onclick = () => fpShowCategory(cat.id, btn);
+                tabBar.appendChild(btn);
+            });
+        })();
+
+        function fpShowCategory(id, tabEl) {
+            // Sekme aktifle
+            document.querySelectorAll('#fp-tabs button').forEach(b => {
+                b.style.background = 'var(--bg-secondary)';
+                b.style.color = 'var(--text-primary)';
+                b.style.borderColor = 'var(--border-color)';
+            });
+            if (tabEl) {
+                tabEl.style.background = 'var(--accent-color)';
+                tabEl.style.color = '#fff';
+                tabEl.style.borderColor = 'var(--accent-color)';
+            }
+
+            const cat = FP_CATEGORIES.find(c => c.id === id);
+            if (!cat) return;
+            const grid = document.getElementById('fp-grid');
+            grid.innerHTML = '';
+            fpSelectedCard = null;
+
+            cat.items.forEach(item => {
+                const card = document.createElement('div');
+                card.style.cssText = 'border:1px solid var(--border-color);border-radius:8px;padding:10px 6px 8px;cursor:pointer;text-align:center;background:var(--bg-secondary);display:flex;flex-direction:column;align-items:center;gap:6px;transition:all 0.15s;';
+                card.onmouseenter = () => { if (card !== fpSelectedCard) { card.style.borderColor = 'var(--accent-color)'; card.style.background = 'var(--bg-tertiary)'; } };
+                card.onmouseleave = () => { if (card !== fpSelectedCard) { card.style.borderColor = 'var(--border-color)'; card.style.background = 'var(--bg-secondary)'; } };
+                card.onclick = () => fpSelectCard(card, item.latex);
+
+                const preview = document.createElement('div');
+                preview.style.cssText = 'min-height:32px;display:flex;align-items:center;justify-content:center;max-width:100%;overflow:hidden;pointer-events:none;';
+                try {
+                    preview.innerHTML = katex.renderToString(item.latex, { throwOnError:false, displayMode:false, maxSize:2 });
+                } catch(e) {
+                    preview.textContent = item.latex.substring(0,16);
+                }
+
+                const lbl = document.createElement('div');
+                lbl.style.cssText = 'font-size:10.5px;color:var(--text-secondary);font-weight:500;line-height:1.2;';
+                lbl.textContent = item.label;
+
+                card.appendChild(preview);
+                card.appendChild(lbl);
+                grid.appendChild(card);
+            });
+        }
+
+        // İlk kategoriyi yükle (DOM hazır olduğunda)
+        document.addEventListener('DOMContentLoaded', () => {
+            fpShowCategory('basic', document.querySelector('#fp-tabs button'));
+        });
+
+        function fpSelectCard(cardEl, latex) {
+            if (fpSelectedCard) {
+                fpSelectedCard.style.borderColor = 'var(--border-color)';
+                fpSelectedCard.style.background = 'var(--bg-secondary)';
+                fpSelectedCard.style.boxShadow = '';
+            }
+            cardEl.style.borderColor = 'var(--accent-color)';
+            cardEl.style.background = 'var(--bg-tertiary)';
+            cardEl.style.boxShadow = '0 0 0 2px var(--accent-color)';
+            fpSelectedCard = cardEl;
+
+            document.getElementById('fp-input').value = latex;
+            const btn = document.getElementById('fp-insert-btn');
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+            fpLiveUpdate();
+        }
+
+        function fpLiveUpdate() {
+            const latex = document.getElementById('fp-input').value.trim();
+            const live = document.getElementById('fp-live');
+            const btn = document.getElementById('fp-insert-btn');
+            btn.disabled = !latex;
+            btn.style.opacity = latex ? '1' : '0.4';
+            btn.style.cursor = latex ? 'pointer' : 'default';
+
+            if (!latex) {
+                live.innerHTML = '<span style="font-size:13px;color:var(--text-secondary);font-style:italic;">Select a formula — preview will appear here</span>';
+                live.style.borderStyle = 'dashed';
+                return;
+            }
+            try {
+                live.innerHTML = katex.renderToString(latex, { throwOnError:false, displayMode:true });
+                live.style.borderStyle = 'solid';
+                live.style.borderColor = 'var(--accent-color)';
+            } catch(e) {
+                live.innerHTML = '<span style="font-size:13px;color:var(--danger-color);">Invalid LaTeX syntax</span>';
+            }
+        }
+
+        function openFormulaPopup() {
+            const modal = document.getElementById('formulaModal');
+            modal.classList.add('show');
+            document.getElementById('fp-input').value = '';
+            document.getElementById('fp-insert-btn').disabled = true;
+            document.getElementById('fp-insert-btn').style.opacity = '0.4';
+            document.getElementById('fp-live').innerHTML = '<span style="font-size:13px;color:var(--text-secondary);font-style:italic;">Select a formula — preview will appear here</span>';
+            document.getElementById('fp-live').style.borderStyle = 'dashed';
+            document.getElementById('fp-live').style.borderColor = 'var(--border-color)';
+            if (fpSelectedCard) {
+                fpSelectedCard.style.borderColor = 'var(--border-color)';
+                fpSelectedCard.style.background = 'var(--bg-secondary)';
+                fpSelectedCard.style.boxShadow = '';
+                fpSelectedCard = null;
+            }
+            // İlk sekmeye sıfırla
+            fpShowCategory('basic', document.querySelector('#fp-tabs button'));
+        }
+
+        function closeFormulaPopup() {
+            document.getElementById('formulaModal').classList.remove('show');
+        }
+
+        function insertFormula() {
+            const latex = document.getElementById('fp-input').value.trim();
+            if (!latex) return;
+            const mode = document.querySelector('input[name="fp-mode"]:checked').value;
+            const wrapped = mode === 'block' ? `\n$$\n${latex}\n$$\n` : `$${latex}$`;
+            if (app) app.replaceSelection(wrapped);
+            closeFormulaPopup();
+        }
+
+        // ESC ile formula popup kapat
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeFormulaPopup();
+            // Ctrl+M ile aç/kapat
+            if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
+                e.preventDefault();
+                const modal = document.getElementById('formulaModal');
+                if (modal.classList.contains('show')) closeFormulaPopup();
+                else openFormulaPopup();
+            }
+        });
+
+        // Overlay tıklaması
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('formulaModal').addEventListener('click', e => {
+                if (e.target === document.getElementById('formulaModal')) closeFormulaPopup();
+            });
+        });
 
         function insertMarkdown(before, after) { app.insertMarkdown(before, after); }
         function insertHeading() { app.insertHeading(); }
