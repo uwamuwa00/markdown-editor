@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Markdown Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --border-color: #dee2e6;
+            --accent-color: #007bff;
+            --accent-hover: #0056b3;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --code-bg: #f1f3f4;
+            --code-border: #e1e5e9;
+            --pre-bg: #282c34;
+            --pre-text: #abb2bf;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.15);
+            --transition: all 0.2s ease;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #3a3a3a;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --border-color: #4a4a4a;
+            --accent-color: #4dabf7;
+            --accent-hover: #339af0;
+            --success-color: #51cf66;
+            --warning-color: #ffd43b;
+            --danger-color: #ff6b6b;
+            --code-bg: #2d2d2d;
+            --code-border: #4a4a4a;
+            --pre-bg: #1e1e1e;
+            --pre-text: #d4d4d4;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .toolbar {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            box-shadow: var(--shadow-sm);
+            z-index: 10;
+        }
+
+        .toolbar-group {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            padding: 0 8px;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .toolbar-group:last-child {
+            border-right: none;
+        }
+
+        .toolbar button {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .toolbar button:hover {
+            background-color: var(--accent-color);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .toolbar button:active {
+            transform: translateY(0);
+        }
+
+        .toolbar button.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .editor-panel, .preview-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .panel-header {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .panel-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .editor-textarea {
+            flex: 1;
+            width: 100%;
+            padding: 20px;
+            border: none;
+            outline: none;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            scroll-behavior: smooth;
+        }
+
+        .preview-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            scroll-behavior: smooth;
+        }
+
+        .stats {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-family: monospace;
+            background-color: var(--bg-tertiary);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .theme-toggle, .fullscreen-btn {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover, .fullscreen-btn:hover {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        /* Enhanced Markdown Styles */
+        .preview-content {
+            font-size: 15px;
+        }
+
+        .preview-content h1 { 
+            font-size: 2.2em; 
+            margin: 0.8em 0 0.4em 0; 
+            border-bottom: 3px solid var(--accent-color); 
+            padding-bottom: 0.3em;
+            font-weight: 700;
+        }
+        
+        .preview-content h2 { 
+            font-size: 1.8em; 
+            margin: 0.7em 0 0.3em 0; 
+            border-bottom: 2px solid var(--border-color); 
+            padding-bottom: 0.3em;
+            font-weight: 600;
+        }
+        
+        .preview-content h3 { 
+            font-size: 1.4em; 
+            margin: 0.6em 0 0.2em 0;
+            font-weight: 600;
+        }
+        
+        .preview-content h4 { 
+            font-size: 1.2em; 
+            margin: 0.5em 0 0.2em 0;
+            font-weight: 600;
+        }
+        
+        .preview-content h5 { 
+            font-size: 1.1em; 
+            margin: 0.4em 0 0.2em 0;
+            font-weight: 600;
+        }
+        
+        .preview-content h6 { 
+            font-size: 1em; 
+            margin: 0.4em 0 0.2em 0;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        
+        .preview-content p { 
+            margin: 1em 0;
+            line-height: 1.7;
+        }
+        
+        .preview-content ul, .preview-content ol { 
+            margin: 1em 0; 
+            padding-left: 2em;
+            line-height: 1.6;
+        }
+        
+        .preview-content li { 
+            margin: 0.4em 0;
+        }
+        
+        .preview-content blockquote {
+            margin: 1.5em 0;
+            padding: 1em 1.5em;
+            border-left: 5px solid var(--accent-color);
+            background-color: var(--bg-secondary);
+            font-style: italic;
+            border-radius: 0 4px 4px 0;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .preview-content code {
+            background-color: var(--code-bg);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            border: 1px solid var(--code-border);
+            color: var(--danger-color);
+        }
+        
+        .preview-content pre {
+            background-color: var(--pre-bg);
+            color: var(--pre-text);
+            padding: 1.5em;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5em 0;
+            border: 1px solid var(--code-border);
+            box-shadow: var(--shadow-md);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .preview-content pre code {
+            background: none;
+            padding: 0;
+            border: none;
+            color: inherit;
+            font-size: inherit;
+        }
+        
+        .preview-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5em 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .preview-content th, .preview-content td {
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .preview-content th {
+            background-color: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .preview-content tr:nth-child(even) {
+            background-color: var(--bg-secondary);
+        }
+        
+        .preview-content a {
+            color: var(--accent-color);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: var(--transition);
+        }
+        
+        .preview-content a:hover {
+            border-bottom-color: var(--accent-color);
+        }
+        
+        .preview-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            margin: 1em 0;
+        }
+
+        .preview-content hr {
+            border: none;
+            height: 2px;
+            background: linear-gradient(to right, transparent, var(--border-color), transparent);
+            margin: 2em 0;
+        }
+
+        /* Enhanced Syntax Highlighting */
+        .keyword { color: #c678dd; font-weight: 600; }
+        .string { color: #98c379; }
+        .number { color: #d19a66; }
+        .comment { color: #5c6370; font-style: italic; }
+        .function { color: #61afef; }
+        .operator { color: #56b6c2; }
+        .variable { color: #e06c75; }
+        .class { color: #f92672; }
+        .builtin { color: #a6e22e; }
+
+        [data-theme="dark"] .keyword { color: #c678dd; }
+        [data-theme="dark"] .string { color: #98c379; }
+        [data-theme="dark"] .number { color: #d19a66; }
+        [data-theme="dark"] .comment { color: #5c6370; font-style: italic; }
+        [data-theme="dark"] .function { color: #61afef; }
+        [data-theme="dark"] .operator { color: #56b6c2; }
+        [data-theme="dark"] .variable { color: #e06c75; }
+        [data-theme="dark"] .class { color: #f92672; }
+        [data-theme="dark"] .builtin { color: #a6e22e; }
+
+        .fullscreen {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 1000 !important;
+            background-color: var(--bg-primary) !important;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .separator {
+            width: 1px;
+            background-color: var(--border-color);
+            margin: 0 12px;
+            height: 24px;
+        }
+
+        /* Loading animation */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .toolbar {
+                padding: 8px;
+            }
+            
+            .toolbar-group {
+                padding: 0 4px;
+            }
+            
+            .toolbar button {
+                padding: 6px 8px;
+                font-size: 12px;
+            }
+            
+            .editor-textarea, .preview-content {
+                padding: 12px;
+            }
+            
+            .content {
+                flex-direction: column;
+            }
+            
+            .editor-panel, .preview-panel {
+                height: 50vh;
+            }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        /* Status bar */
+        .status-bar {
+            background-color: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            padding: 4px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .status-left, .status-right {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--success-color);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            z-index: 2000;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: var(--transition);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.error {
+            background-color: var(--danger-color);
+        }
+
+        .toast.warning {
+            background-color: var(--warning-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="toolbar">
+            <div class="toolbar-group">
+                <button onclick="insertMarkdown('**', '**')" title="Bold (Ctrl+B)">**Bold**</button>
+                <button onclick="insertMarkdown('*', '*')" title="Italic (Ctrl+I)">*Italic*</button>
+                <button onclick="insertMarkdown('~~', '~~')" title="Strikethrough">~~Strikethrough~~</button>
+                <button onclick="insertHeading()" title="Heading (Ctrl+H)">H</button>
+            </div>
+            <div class="toolbar-group">
+                <button onclick="insertCode()" title="Inline Code">`Code`</button>
+                <button onclick="insertCodeBlock()" title="Code Block">{'{}'}</button>
+                <button onclick="insertLink()" title="Link (Ctrl+K)">🔗</button>
+                <button onclick="insertImage()" title="Image">🖼️</button>
+                <button onclick="insertTable()" title="Table">⊞</button>
+            </div>
+            <div class="toolbar-group">
+                <button onclick="insertList('ul')" title="Bullet List">• List</button>
+                <button onclick="insertList('ol')" title="Numbered List">1. List</button>
+                <button onclick="insertQuote()" title="Quote">"</button>
+                <button onclick="insertHR()" title="Horizontal Rule">—</button>
+            </div>
+            <div class="toolbar-group">
+                <button onclick="exportMarkdown()" title="Export Markdown">📄 MD</button>
+                <button onclick="exportHTML()" title="Export HTML">🌐 HTML</button>
+                <button onclick="clearContent()" title="Clear Content">🗑️</button>
+            </div>
+            <div class="toolbar-group">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">🌙/☀️</button>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="editor-panel" id="editorPanel">
+                <div class="panel-header">
+                    <span class="panel-title">
+                        📝 Markdown Editor
+                    </span>
+                    <div class="panel-controls">
+                        <span class="stats" id="stats">0 chars | 0 words | 0 lines</span>
+                        <button class="fullscreen-btn" onclick="toggleFullscreen('editor')" title="Fullscreen Editor">🔍</button>
+                    </div>
+                </div>
+                <textarea class="editor-textarea" id="editor" placeholder="Start typing your Markdown here...
+
+# Welcome to Professional Markdown Editor
+
+## Features
+- **Live preview** with syntax highlighting
+- **Dark/Light theme** support
+- **Auto-save** to localStorage
+- **Export** to MD and HTML
+- **Keyboard shortcuts**
+- **Responsive design**
+
+Try some formatting:
+- **Bold text**
+- *Italic text*
+- `Inline code`
+- [Links](https://example.com)
+- Tables, lists, and more!
+
+```javascript
+// Code blocks with syntax highlighting
+function hello() {
+    console.log("Hello, World!");
+}
+```
+
+> Blockquotes for emphasis
+
+---
+
+Happy writing! ✨"></textarea>
+            </div>
+            
+            <div class="preview-panel" id="previewPanel">
+                <div class="panel-header">
+                    <span class="panel-title">
+                        👁️ Preview
+                    </span>
+                    <div class="panel-controls">
+                        <button class="fullscreen-btn" onclick="toggleFullscreen('preview')" title="Fullscreen Preview">🔍</button>
+                    </div>
+                </div>
+                <div class="preview-content" id="preview">
+                    <p style="color: var(--text-secondary); text-align: center; margin-top: 2em;">
+                        Start typing to see the preview...
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-left">
+                <span id="saveStatus">✓ Saved</span>
+                <span id="cursorPos">Line 1, Col 1</span>
+            </div>
+            <div class="status-right">
+                <span id="lastSaved">Never</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Enhanced Markdown Parser
+        class MarkdownParser {
+            constructor() {
+                this.rules = [
+                    // Headers (more specific first)
+                    { pattern: /^###### (.*$)/gm, replacement: '<h6>$1</h6>' },
+                    { pattern: /^##### (.*$)/gm, replacement: '<h5>$1</h5>' },
+                    { pattern: /^#### (.*$)/gm, replacement: '<h4>$1</h4>' },
+                    { pattern: /^### (.*$)/gm, replacement: '<h3>$1</h3>' },
+                    { pattern: /^## (.*$)/gm, replacement: '<h2>$1</h2>' },
+                    { pattern: /^# (.*$)/gm, replacement: '<h1>$1</h1>' },
+                    
+                    // Bold and italic (order matters)
+                    { pattern: /\*\*\*(.+?)\*\*\*/g, replacement: '<strong><em>$1</em></strong>' },
+                    { pattern: /\*\*(.+?)\*\*/g, replacement: '<strong>$1</strong>' },
+                    { pattern: /\*(.+?)\*/g, replacement: '<em>$1</em>' },
+                    { pattern: /___(.+?)___/g, replacement: '<strong><em>$1</em></strong>' },
+                    { pattern: /__(.+?)__/g, replacement: '<strong>$1</strong>' },
+                    { pattern: /_(.+?)_/g, replacement: '<em>$1</em>' },
+                    { pattern: /~~(.+?)~~/g, replacement: '<del>$1</del>' },
+                    
+                    // Code (inline and blocks)
+                    { pattern: /`(.+?)`/g, replacement: '<code>$1</code>' },
+                    
+                    // Links and images
+                    { pattern: /\[([^\]]+)\]\(([^)]+)\)/g, replacement: '<a href="$2" target="_blank">$1</a>' },
+                    { pattern: /!\[([^\]]*)\]\(([^)]+)\)/g, replacement: '<img alt="$1" src="$2" loading="lazy">' },
+                    
+                    // Horizontal rule
+                    { pattern: /^---+$/gm, replacement: '<hr>' },
+                    { pattern: /^\*\*\*+$/gm, replacement: '<hr>' },
+                    
+                    // Blockquotes
+                    { pattern: /^> (.+)$/gm, replacement: '<blockquote>$1</blockquote>' },
+                    
+                    // Line breaks
+                    { pattern: /\n\n/g, replacement: '</p><p>' },
+                    { pattern: /\n/g, replacement: '<br>' },
+                ];
+            }
+
+            parse(text) {
+                if (!text.trim()) return '';
+                
+                let html = '<p>' + text + '</p>';
+                
+                // Handle code blocks first
+                html = this.parseCodeBlocks(html);
+                
+                // Handle tables
+                html = this.parseTables(html);
+                
+                // Handle lists
+                html = this.parseLists(html);
+                
+                // Apply other rules
+                for (const rule of this.rules) {
+                    html = html.replace(rule.pattern, rule.replacement);
+                }
+                
+                // Clean up
+                html = html.replace(/<p><\/p>/g, '');
+                html = html.replace(/<p>(<h[1-6]>)/g, '$1');
+                html = html.replace(/(<\/h[1-6]>)<\/p>/g, '$1');
+                html = html.replace(/<p>(<blockquote>)/g, '$1');
+                html = html.replace(/(<\/blockquote>)<\/p>/g, '$1');
+                html = html.replace(/<p>(<hr>)<\/p>/g, '$1');
+                html = html.replace(/<p>(<pre>)/g, '$1');
+                html = html.replace(/(<\/pre>)<\/p>/g, '$1');
+                html = html.replace(/<p>(<table>)/g, '$1');
+                html = html.replace(/(<\/table>)<\/p>/g, '$1');
+                html = html.replace(/<p>(<ul>)<\/p>/g, '$1');
+                html = html.replace(/<\/p>(<\/ul>)/g, '$1');
+                html = html.replace(/<p>(<ol>)<\/p>/g, '$1');
+                html = html.replace(/<\/p>(<\/ol>)/g, '$1');
+                
+                return html;
+            }
+
+            parseCodeBlocks(html) {
+                const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+                return html.replace(codeBlockRegex, (match, lang, code) => {
+                    const highlightedCode = this.highlightSyntax(code.trim(), lang);
+                    return `<pre><code class="language-${lang || 'text'}">${highlightedCode}</code></pre>`;
+                });
+            }
+
+            parseTables(html) {
+                const tableRegex = /(\|[^\n]+\|\n\|[-\s|:]+\|\n(?:\|[^\n]+\|\n?)*)/g;
+                return html.replace(tableRegex, (match) => {
+                    const lines = match.trim().split('\n');
+                    if (lines.length < 2) return match;
+                    
+                    let tableHTML = '<table>';
+                    let isFirstRow = true;
+                    
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (line.startsWith('|---')) continue; // Skip separator
+                        
+                        const cells = line.split('|').slice(1, -1).map(cell => cell.trim());
+                        const tag = isFirstRow ? 'th' : 'td';
+                        const rowHTML = `<tr>${cells.map(cell => `<${tag}>${cell}</${tag}>`).join('')}</tr>`;
+                        
+                        if (isFirstRow) {
+                            tableHTML += '<thead>' + rowHTML + '</thead><tbody>';
+                            isFirstRow = false;
+                        } else {
+                            tableHTML += rowHTML;
+                        }
+                    }
+                    
+                    tableHTML += '</tbody></table>';
+                    return tableHTML;
+                });
+            }
+
+            parseLists(html) {
+                // Unordered lists
+                html = html.replace(/^[*+-] (.+)$/gm, '<li>$1</li>');
+                html = html.replace(/(<li>.*<\/li>)(\s*<li>.*<\/li>)*/g, '<ul>$&</ul>');
+                
+                // Ordered lists
+                html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+                html = html.replace(/(<li>.*<\/li>)(\s*<li>.*<\/li>)*/g, '<ol>$&</ol>');
+                
+                return html;
+            }
+
+            highlightSyntax(code, language) {
+                if (!language) return this.escapeHtml(code);
+                
+                const syntaxRules = {
+                    javascript: {
+                        keywords: ['function', 'var', 'let', 'const', 'if', 'else', 'for', 'while', 'return', 'class', 'extends', 'import', 'export', 'default', 'new', 'this', 'try', 'catch', 'finally', 'throw', 'async', 'await'],
+                        builtins: ['console', 'document', 'window', 'Array', 'Object', 'String', 'Number', 'Boolean', 'Date', 'RegExp', 'Math', 'JSON', 'setTimeout', 'setInterval', 'clearTimeout', 'clearInterval'],
+                        operators: ['=', '+', '-', '*', '/', '%', '++', '--', '+=', '-=', '*=', '/=', '%=', '===', '==', '!==', '!=', '>', '<', '>=', '<=', '&&', '||', '!', '&', '|', '^', '~', '<<', '>>', '>>>']
+                    },
+                    python: {
+                        keywords: ['def', 'class', 'if', 'else', 'elif', 'for', 'while', 'return', 'import', 'from', 'as', 'try', 'except', 'finally', 'raise', 'with', 'lambda', 'yield', 'global', 'nonlocal'],
+                        builtins: ['print', 'len', 'range', 'list', 'dict', 'set', 'tuple', 'str', 'int', 'float', 'bool', 'type', 'isinstance', 'hasattr', 'getattr', 'setattr'],
+                        operators: ['=', '+', '-', '*', '/', '//', '%', '**', '+=', '-=', '*=', '/=', '%=', '==', '!=', '>', '<', '>=', '<=', 'and', 'or', 'not', '&', '|', '^', '~', '<<', '>>']
+                    },
+                    css: {
+                        keywords: ['color', 'background', 'margin', 'padding', 'border', 'display', 'position', 'width', 'height', 'font-size', 'font-family', 'text-align', 'float', 'clear', 'overflow', 'visibility', 'opacity', 'z-index'],
+                        properties: ['px', 'em', 'rem', '%', 'vh', 'vw', 'auto', 'inherit', 'initial', 'unset'],
+                        selectors: ['.', '#', ':', '::', '[', ']', '>', '+', '~', '*']
+                    },
+                    html: {
+                        tags: ['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'img', 'ul', 'ol', 'li', 'table', 'tr', 'td', 'th', 'thead', 'tbody', 'form', 'input', 'button', 'select', 'option', 'textarea', 'header', 'footer', 'nav', 'main', 'section', 'article', 'aside'],
+                        attributes: ['id', 'class', 'style', 'href', 'src', 'alt', 'title', 'type', 'name', 'value', 'placeholder', 'disabled', 'checked', 'selected', 'readonly', 'required'],
+                        voidElements: ['img', 'br', 'hr', 'input', 'meta', 'link', 'source', 'track', 'area', 'base', 'col', 'embed', 'param', 'wbr']
+                    }
+                };
+                
+                const rules = syntaxRules[language];
+                if (!rules) return this.escapeHtml(code);
+                
+                let highlighted = this.escapeHtml(code);
+                
+                // Highlight keywords
+                if (rules.keywords) {
+                    rules.keywords.forEach(keyword => {
+                        const regex = new RegExp(`\\b${keyword}\\b`, 'g');
+                        highlighted = highlighted.replace(regex, `<span class="keyword">${keyword}</span>`);
+                    });
+                }
+                
+                // Highlight builtins
+                if (rules.builtins) {
+                    rules.builtins.forEach(builtin => {
+                        const regex = new RegExp(`\\b${builtin}\\b`, 'g');
+                        highlighted = highlighted.replace(regex, `<span class="builtin">${builtin}</span>`);
+                    });
+                }
+                
+                // Highlight strings
+                highlighted = highlighted.replace(/(["'])(?:(?=(\\?))\2.)*?\1/g, '<span class="string">$&</span>');
+                
+                // Highlight numbers
+                highlighted = highlighted.replace(/\b\d+\.?\d*\b/g, '<span class="number">$&</span>');
+                
+                // Highlight comments
+                if (language === 'javascript' || language === 'css') {
+                    highlighted = highlighted.replace(/\/\/.*$/gm, '<span class="comment">$&</span>');
+                    highlighted = highlighted.replace(/\/\*[\s\S]*?\*\//g, '<span class="comment">$&</span>');
+                } else if (language === 'python') {
+                    highlighted = highlighted.replace(/#.*$/gm, '<span class="comment">$&</span>');
+                } else if (language === 'html') {
+                    highlighted = highlighted.replace(/<!--[\s\S]*?-->/g, '<span class="comment">$&</span>');
+                }
+                
+                // Highlight functions
+                highlighted = highlighted.replace(/\b([a-zA-Z_]\w*)\s*\(/g, '<span class="function">$1</span>(');
+                
+                return highlighted;
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+
+        // Application State
+        class MarkdownEditor {
+            constructor() {
+                this.editor = document.getElementById('editor');
+                this.preview = document.getElementById('preview');
+                this.stats = document.getElementById('stats');
+                this.saveStatus = document.getElementById('saveStatus');
+                this.cursorPos = document.getElementById('cursorPos');
+                this.lastSaved = document.getElementById('lastSaved');
+                this.parser = new MarkdownParser();
+                this.saveTimer = null;
+                this.debounceTimer = null;
+                
+                this.init();
+            }
+
+            init() {
+                this.loadFromStorage();
+                this.setupEventListeners();
+                this.setupKeyboardShortcuts();
+                this.updatePreview();
+                this.updateStats();
+                this.updateCursorPosition();
+                
+                // Auto-save every 30 seconds
+                setInterval(() => this.saveToStorage(), 30000);
+            }
+
+            setupEventListeners() {
+                this.editor.addEventListener('input', () => this.handleInput());
+                this.editor.addEventListener('keydown', (e) => this.handleKeyDown(e));
+                this.editor.addEventListener('keyup', () => this.updateCursorPosition());
+                this.editor.addEventListener('click', () => this.updateCursorPosition());
+                
+                // Prevent accidental navigation
+                window.addEventListener('beforeunload', (e) => {
+                    if (this.editor.value && this.editor.value !== this.getStoredContent()) {
+                        e.preventDefault();
+                        e.returnValue = '';
+                    }
+                });
+            }
+
+            setupKeyboardShortcuts() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                        switch(e.key) {
+                            case 'b':
+                                e.preventDefault();
+                                this.insertMarkdown('**', '**');
+                                break;
+                            case 'i':
+                                e.preventDefault();
+                                this.insertMarkdown('*', '*');
+                                break;
+                            case 'k':
+                                e.preventDefault();
+                                this.insertLink();
+                                break;
+                            case 'h':
+                                e.preventDefault();
+                                this.insertHeading();
+                                break;
+                            case 's':
+                                e.preventDefault();
+                                this.saveToStorage();
+                                this.showToast('Content saved manually', 'success');
+                                break;
+                        }
+                    }
+                });
+            }
+
+            handleInput() {
+                clearTimeout(this.debounceTimer);
+                this.debounceTimer = setTimeout(() => {
+                    this.updatePreview();
+                    this.updateStats();
+                    this.autoSave();
+                }, 100);
+            }
+
+            handleKeyDown(e) {
+                // Handle tab key
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    this.insertMarkdown('    ');
+                }
+                
+                // Handle enter key for lists
+                if (e.key === 'Enter') {
+                    const line = this.getCurrentLine();
+                    if (/^[*+-] /.test(line) || /^\d+\. /.test(line)) {
+                        setTimeout(() => this.continueList(), 0);
+                    }
+                }
+            }
+
+            getCurrentLine() {
+                const start = this.editor.value.lastIndexOf('\n', this.editor.selectionStart - 1) + 1;
+                const end = this.editor.value.indexOf('\n', this.editor.selectionStart);
+                return this.editor.value.substring(start, end === -1 ? this.editor.value.length : end);
+            }
+
+            continueList() {
+                const line = this.getCurrentLine();
+                const listMatch = line.match(/^([*+-] |\d+\. )(.*)$/);
+                if (listMatch) {
+                    const prefix = listMatch[1];
+                    if (/^\d+\. /.test(prefix)) {
+                        const newNumber = parseInt(prefix) + 1;
+                        this.insertMarkdown(`\n${newNumber}. `);
+                    } else {
+                        this.insertMarkdown(`\n${prefix}`);
+                    }
+                }
+            }
+
+            updatePreview() {
+                const markdown = this.editor.value;
+                const html = this.parser.parse(markdown);
+                this.preview.innerHTML = html || '<p style="color: var(--text-secondary); text-align: center; margin-top: 2em;">Start typing to see the preview...</p>';
+            }
+
+            updateStats() {
+                const text = this.editor.value;
+                const charCount = text.length;
+                const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+                const lineCount = text.split('\n').length;
+                this.stats.textContent = `${charCount} chars | ${wordCount} words | ${lineCount} lines`;
+            }
+
+            updateCursorPosition() {
+                const text = this.editor.value;
+                const position = this.editor.selectionStart;
+                const textBefore = text.substring(0, position);
+                const lines = textBefore.split('\n');
+                const currentLine = lines.length;
+                const currentCol = lines[lines.length - 1].length + 1;
+                this.cursorPos.textContent = `Line ${currentLine}, Col ${currentCol}`;
+            }
+
+            autoSave() {
+                clearTimeout(this.saveTimer);
+                this.saveTimer = setTimeout(() => {
+                    this.saveToStorage();
+                    this.saveStatus.textContent = '✓ Saved';
+                    this.saveStatus.style.color = 'var(--success-color)';
+                }, 1000);
+                
+                this.saveStatus.textContent = '⏳ Saving...';
+                this.saveStatus.style.color = 'var(--warning-color)';
+            }
+
+            saveToStorage() {
+                try {
+                    localStorage.setItem('markdownContent', this.editor.value);
+                    localStorage.setItem('lastSaved', new Date().toISOString());
+                    this.updateLastSaved();
+                } catch (error) {
+                    console.error('Failed to save:', error);
+                    this.showToast('Failed to save content', 'error');
+                }
+            }
+
+            loadFromStorage() {
+                try {
+                    const savedContent = localStorage.getItem('markdownContent');
+                    if (savedContent) {
+                        this.editor.value = savedContent;
+                    }
+                    
+                    const savedTheme = localStorage.getItem('theme');
+                    if (savedTheme) {
+                        document.documentElement.setAttribute('data-theme', savedTheme);
+                    }
+                    
+                    this.updateLastSaved();
+                } catch (error) {
+                    console.error('Failed to load:', error);
+                }
+            }
+
+            getStoredContent() {
+                return localStorage.getItem('markdownContent') || '';
+            }
+
+            updateLastSaved() {
+                const lastSaved = localStorage.getItem('lastSaved');
+                if (lastSaved) {
+                    const date = new Date(lastSaved);
+                    this.lastSaved.textContent = `Saved: ${date.toLocaleTimeString()}`;
+                }
+            }
+
+            insertMarkdown(before, after = '') {
+                const start = this.editor.selectionStart;
+                const end = this.editor.selectionEnd;
+                const selectedText = this.editor.value.substring(start, end);
+                const replacement = before + selectedText + after;
+                
+                this.editor.value = this.editor.value.substring(0, start) + replacement + this.editor.value.substring(end);
+                this.editor.selectionStart = start + before.length;
+                this.editor.selectionEnd = start + before.length + selectedText.length;
+                this.editor.focus();
+                
+                this.handleInput();
+            }
+
+            insertHeading() {
+                const line = this.getCurrentLine();
+                const headingLevel = (line.match(/^#+/) || [''])[0].length;
+                const newLevel = headingLevel >= 6 ? 1 : headingLevel + 1;
+                const heading = '#'.repeat(newLevel) + ' ';
+                this.replaceCurrentLine(heading);
+            }
+
+            insertCode() {
+                this.insertMarkdown('`', '`');
+            }
+
+            insertCodeBlock() {
+                this.insertMarkdown('```\n', '\n```');
+            }
+
+            insertLink() {
+                const selectedText = this.editor.value.substring(this.editor.selectionStart, this.editor.selectionEnd);
+                const linkText = selectedText || 'Link text';
+                const replacement = `[${linkText}](URL)`;
+                this.replaceSelection(replacement);
+            }
+
+            insertImage() {
+                const replacement = `![Alt text](image-url)`;
+                this.replaceSelection(replacement);
+            }
+
+            insertTable() {
+                const table = '| Header 1 | Header 2 | Header 3 |\n|----------|----------|----------|\n| Cell 1   | Cell 2   | Cell 3   |\n| Cell 4   | Cell 5   | Cell 6   |';
+                this.replaceSelection(table);
+            }
+
+            insertList(type) {
+                if (type === 'ul') {
+                    this.insertMarkdown('\n- ');
+                } else {
+                    this.insertMarkdown('\n1. ');
+                }
+            }
+
+            insertQuote() {
+                this.insertMarkdown('\n> ');
+            }
+
+            insertHR() {
+                this.insertMarkdown('\n---\n');
+            }
+
+            replaceCurrentLine(newLine) {
+                const start = this.editor.value.lastIndexOf('\n', this.editor.selectionStart - 1) + 1;
+                const end = this.editor.value.indexOf('\n', this.editor.selectionStart);
+                const lineEnd = end === -1 ? this.editor.value.length : end;
+                
+                this.editor.value = this.editor.value.substring(0, start) + newLine + this.editor.value.substring(lineEnd);
+                this.editor.selectionStart = start + newLine.length;
+                this.editor.selectionEnd = start + newLine.length;
+                this.editor.focus();
+                
+                this.handleInput();
+            }
+
+            replaceSelection(replacement) {
+                const start = this.editor.selectionStart;
+                const end = this.editor.selectionEnd;
+                
+                this.editor.value = this.editor.value.substring(0, start) + replacement + this.editor.value.substring(end);
+                this.editor.selectionStart = start;
+                this.editor.selectionEnd = start + replacement.length;
+                this.editor.focus();
+                
+                this.handleInput();
+            }
+
+            clearContent() {
+                if (this.editor.value && confirm('Are you sure you want to clear all content?')) {
+                    this.editor.value = '';
+                    this.handleInput();
+                    this.showToast('Content cleared', 'success');
+                }
+            }
+
+            showToast(message, type = 'success') {
+                const toast = document.getElementById('toast');
+                toast.textContent = message;
+                toast.className = `toast ${type}`;
+                toast.classList.add('show');
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+        }
+
+        // Global functions for toolbar buttons
+        let app;
+
+        function insertMarkdown(before, after) {
+            app.insertMarkdown(before, after);
+        }
+
+        function insertHeading() {
+            app.insertHeading();
+        }
+
+        function insertCode() {
+            app.insertCode();
+        }
+
+        function insertCodeBlock() {
+            app.insertCodeBlock();
+        }
+
+        function insertLink() {
+            app.insertLink();
+        }
+
+        function insertImage() {
+            app.insertImage();
+        }
+
+        function insertTable() {
+            app.insertTable();
+        }
+
+        function insertList(type) {
+            app.insertList(type);
+        }
+
+        function insertQuote() {
+            app.insertQuote();
+        }
+
+        function insertHR() {
+            app.insertHR();
+        }
+
+        function clearContent() {
+            app.clearContent();
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        function toggleFullscreen(panel) {
+            const editorPanel = document.getElementById('editorPanel');
+            const previewPanel = document.getElementById('previewPanel');
+            
+            if (panel === 'editor') {
+                editorPanel.classList.toggle('fullscreen');
+                previewPanel.classList.toggle('hidden');
+                if (editorPanel.classList.contains('fullscreen')) {
+                    app.editor.focus();
+                }
+            } else {
+                previewPanel.classList.toggle('fullscreen');
+                editorPanel.classList.toggle('hidden');
+            }
+        }
+
+        function exportMarkdown() {
+            const content = app.editor.value;
+            const blob = new Blob([content], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `markdown-${new Date().toISOString().slice(0, 10)}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
+            app.showToast('Markdown exported successfully', 'success');
+        }
+
+        function exportHTML() {
+            const markdown = app.editor.value;
+            const html = app.parser.parse(markdown);
+            const fullHTML = `<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exported Markdown Document</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 40px 20px; 
+            line-height: 1.7;
+            color: #333;
+        }
+        h1, h2, h3 { 
+            border-bottom: 1px solid #eee; 
+            padding-bottom: 0.3em;
+            margin-top: 1.5em;
+        }
+        code { 
+            background: #f4f4f4; 
+            padding: 2px 4px; 
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        pre { 
+            background: #f4f4f4; 
+            padding: 1em; 
+            border-radius: 4px; 
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        blockquote { 
+            border-left: 4px solid #ddd; 
+            margin: 0; 
+            padding-left: 1em; 
+            color: #666;
+            font-style: italic;
+        }
+        table { 
+            border-collapse: collapse; 
+            width: 100%; 
+            margin: 1em 0;
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 8px; 
+            text-align: left;
+        }
+        th { 
+            background-color: #f2f2f2; 
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+${html}
+</body>
+</html>`;
+            
+            const blob = new Blob([fullHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `document-${new Date().toISOString().slice(0, 10)}.html`;
+            a.click();
+            URL.revokeObjectURL(url);
+            app.showToast('HTML exported successfully', 'success');
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            app = new MarkdownEditor();
+            console.log('Professional Markdown Editor initialized successfully');
+        });
+    </script>
+</body>
+</html>
