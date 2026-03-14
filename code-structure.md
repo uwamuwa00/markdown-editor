@@ -318,3 +318,4 @@ handleInput() {
 - **Mobile Support**: Responsive design with touch support
 
 This structure ensures maintainability, performance, and extensibility while keeping everything in a single file.
+Feel free to use and modify as needed!
