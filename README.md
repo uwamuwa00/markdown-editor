@@ -14,6 +14,8 @@ A lightweight, single-file Markdown editor with live preview, Mermaid diagrams, 
 - **KaTeX Formulas** — Inline `$...$` and block `$$...$$` LaTeX support
 - **Syntax Highlighting** — JavaScript, Python, CSS code blocks
 - **Dark / Light Mode** — Toggle with one click, full KaTeX dark mode support
+- **Spellcheck Toggle** — On/off switch via `ABC` button, off by default (better for code & LaTeX)
+- **Split Panel UI** — Divider line between editor and preview, distinct background tones for each panel
 - **Auto-save** — Content saved to localStorage automatically
 - **Export** — Download as `.md` or `.html`
 - **Keyboard Shortcuts** — Ctrl+B, Ctrl+I, Ctrl+K, Ctrl+S, Ctrl+M
@@ -50,6 +52,7 @@ No Node.js, no npm, no build step required.
 | `Ctrl+M` | Open Formula Picker |
 | `Tab` | Indent |
 | `ESC` | Close any modal |
+| `ABC` button | Toggle spellcheck on/off |
 
 ---
 
@@ -125,6 +128,17 @@ $$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$
 - Full dark mode support — all KaTeX symbols visible in both themes
 - Keyboard accessible: Ctrl+M to open, ESC to close
 
+### Spellcheck Toggle (V2)
+- Off by default — avoids noise on LaTeX and code syntax
+- `ABC` toolbar button toggles on/off with visual strikethrough indicator
+- Enable when writing prose or long-form English content
+
+### Split Panel Design (V2)
+- 1px vertical divider line separates editor and preview
+- Editor panel has a slightly darker background tone
+- Preview panel has a slightly lighter background tone
+- Distinction works in both dark and light themes — helps orient at a glance
+
 ### Turkish Character Support
 - Full Turkish character support in Mermaid diagrams
 - Automatic sanitization: `ş→s`, `ğ→g`, `ı→i`, `ç→c`, `ö→o`, `ü→u`
@@ -156,6 +170,7 @@ $$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$
 ### Architecture
 - **Single-file design**: Everything in `index.html`
 - **Map-based Mermaid storage**: Prevents newline loss
+- **Placeholder-based LaTeX parsing**: LaTeX extracted before markdown rules run — prevents `_italic_` rule from breaking subscripts like `x_i`
 - **DOM API parsing**: Preserves whitespace
 - **Debounced rendering**: Optimized performance
 - **Modal system**: Unified overlay pattern for Table Builder and Formula Picker
@@ -181,7 +196,11 @@ $$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$
 - ✅ Live KaTeX preview inside the picker
 - ✅ Inline / Block mode toggle
 - ✅ Ctrl+M keyboard shortcut
-- ✅ Full dark mode KaTeX rendering fix
+- ✅ Full dark mode KaTeX rendering fix (SVG paths, fraction lines, all symbols)
+- ✅ KaTeX parse order fix — formulas with subscripts (`x_i`) now render correctly
+- ✅ Spellcheck toggle — off by default, `ABC` button to enable
+- ✅ Panel divider — 1px vertical line between editor and preview
+- ✅ Panel tone differentiation — editor and preview have distinct background tones
 
 ### V1.0.0
 - ✅ Single file editor with live preview
