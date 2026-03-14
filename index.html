@@ -498,6 +498,196 @@
         .toast.show { opacity: 1; transform: translateY(0); }
         .toast.error { background-color: var(--danger-color); }
         .toast.warning { background-color: var(--warning-color); }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            pointer-events: none;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: all;
+        }
+
+        .modal {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            pointer-events: all;
+        }
+
+        .modal-overlay.show .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .modal-body {
+            padding: 20px 24px;
+        }
+
+        .modal-footer {
+            padding: 16px 24px 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .table-controls {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            flex: 1;
+        }
+
+        .control-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .control-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            font-size: 16px;
+        }
+
+        .control-btn:hover {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .control-value {
+            min-width: 40px;
+            text-align: center;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .table-preview {
+            margin: 20px 0;
+        }
+
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .preview-table th,
+        .preview-table td {
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            text-align: left;
+            background-color: var(--bg-secondary);
+        }
+
+        .preview-table th {
+            background-color: var(--bg-tertiary);
+            font-weight: 600;
+        }
+
+        .add-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .add-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        .add-btn:hover {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover, var(--accent-color));
+            border-color: var(--accent-hover, var(--accent-color));
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--bg-tertiary);
+        }
     </style>
 </head>
 <body>
@@ -575,6 +765,50 @@
     </div>
 
     <div class="toast" id="toast"></div>
+
+    <!-- Table Modal -->
+    <div class="modal-overlay" id="tableModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Tablo Oluştur</h2>
+            </div>
+            <div class="modal-body">
+                <div class="table-controls">
+                    <div class="control-group">
+                        <label class="control-label">Sütun Sayısı</label>
+                        <div class="control-input">
+                            <button class="control-btn" onclick="updateTableSize('cols', -1)">−</button>
+                            <span class="control-value" id="colCount">3</span>
+                            <button class="control-btn" onclick="updateTableSize('cols', 1)">+</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Satır Sayısı</label>
+                        <div class="control-input">
+                            <button class="control-btn" onclick="updateTableSize('rows', -1)">−</button>
+                            <span class="control-value" id="rowCount">3</span>
+                            <button class="control-btn" onclick="updateTableSize('rows', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="add-buttons">
+                    <button class="add-btn" onclick="addRow()">+ Satır Ekle</button>
+                    <button class="add-btn" onclick="addCol()">+ Sütun Ekle</button>
+                </div>
+
+                <div class="table-preview">
+                    <table class="preview-table" id="previewTable">
+                        <!-- Table will be generated here -->
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeTableModal()">İptal</button>
+                <button class="btn-primary" onclick="insertTableToEditor()">Editöre Ekle</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // ── ÇÖZÜM: Mermaid kodlarını Map'te sakla, HTML'e gömme ──
@@ -1008,8 +1242,86 @@
             insertImage() { this.replaceSelection(`![Alt text](image-url)`); }
 
             insertTable() {
-                const table = '| Header 1 | Header 2 | Header 3 |\n|----------|----------|----------|\n| Cell 1   | Cell 2   | Cell 3   |\n| Cell 4   | Cell 5   | Cell 6   |';
-                this.replaceSelection(table);
+                this.showTableModal();
+            }
+
+            showTableModal() {
+                this.currentCols = 3;
+                this.currentRows = 3;
+                this.updateTablePreview();
+                
+                const modal = document.getElementById('tableModal');
+                modal.classList.add('show');
+            }
+
+            updateTablePreview() {
+                const table = document.getElementById('previewTable');
+                const colCount = document.getElementById('colCount');
+                const rowCount = document.getElementById('rowCount');
+                
+                colCount.textContent = this.currentCols;
+                rowCount.textContent = this.currentRows;
+                
+                // Generate preview table
+                let html = '';
+                
+                // Header row
+                html += '<tr>';
+                for (let c = 0; c < this.currentCols; c++) {
+                    html += `<th>Başlık ${c + 1}</th>`;
+                }
+                html += '</tr>';
+                
+                // Data rows
+                for (let r = 0; r < this.currentRows; r++) {
+                    html += '<tr>';
+                    for (let c = 0; c < this.currentCols; c++) {
+                        html += `<td>Hücre ${r + 1}-${c + 1}</td>`;
+                    }
+                    html += '</tr>';
+                }
+                
+                table.innerHTML = html;
+                
+                // Update button states
+                const colMinusBtn = document.querySelector('.control-group:first-child .control-btn:first-child');
+                const colPlusBtn = document.querySelector('.control-group:first-child .control-btn:last-child');
+                const rowMinusBtn = document.querySelector('.control-group:last-child .control-btn:first-child');
+                const rowPlusBtn = document.querySelector('.control-group:last-child .control-btn:last-child');
+                
+                colMinusBtn.disabled = this.currentCols <= 1;
+                colPlusBtn.disabled = this.currentCols >= 8;
+                rowMinusBtn.disabled = this.currentRows <= 1;
+                rowPlusBtn.disabled = this.currentRows >= 10;
+            }
+
+            generateTableMarkdown() {
+                let markdown = '';
+                
+                // Header row
+                markdown += '|';
+                for (let c = 0; c < this.currentCols; c++) {
+                    markdown += ` Başlık ${c + 1} |`;
+                }
+                markdown += '\n';
+                
+                // Separator row
+                markdown += '|';
+                for (let c = 0; c < this.currentCols; c++) {
+                    markdown += '-----------|';
+                }
+                markdown += '\n';
+                
+                // Data rows
+                for (let r = 0; r < this.currentRows; r++) {
+                    markdown += '|';
+                    for (let c = 0; c < this.currentCols; c++) {
+                        markdown += ` Hücre ${r + 1}-${c + 1} |`;
+                    }
+                    markdown += '\n';
+                }
+                
+                return markdown;
             }
 
             insertList(type) {
@@ -1104,6 +1416,41 @@
             }
         }
 
+        // Table Modal Functions
+        function updateTableSize(type, delta) {
+            if (type === 'cols') {
+                app.currentCols = Math.max(1, Math.min(8, app.currentCols + delta));
+            } else {
+                app.currentRows = Math.max(1, Math.min(10, app.currentRows + delta));
+            }
+            app.updateTablePreview();
+        }
+
+        function addRow() {
+            if (app.currentRows < 10) {
+                app.currentRows++;
+                app.updateTablePreview();
+            }
+        }
+
+        function addCol() {
+            if (app.currentCols < 8) {
+                app.currentCols++;
+                app.updateTablePreview();
+            }
+        }
+
+        function closeTableModal() {
+            const modal = document.getElementById('tableModal');
+            modal.classList.remove('show');
+        }
+
+        function insertTableToEditor() {
+            const markdown = app.generateTableMarkdown();
+            app.replaceSelection(markdown);
+            closeTableModal();
+        }
+
         function exportMarkdown() {
             const content = app.editor.value;
             const blob = new Blob([content], { type: 'text/markdown' });
@@ -1130,8 +1477,17 @@
             app.showToast('HTML exported successfully', 'success');
         }
 
+        // Close modal on overlay click
         document.addEventListener('DOMContentLoaded', () => {
             app = new MarkdownEditor();
+            
+            const modalOverlay = document.getElementById('tableModal');
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) {
+                    closeTableModal();
+                }
+            });
+            
             console.log('Professional Markdown Editor initialized successfully');
         });
     </script>
