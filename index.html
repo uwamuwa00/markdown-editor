@@ -709,23 +709,21 @@
             }
 
             parseLists(html) {
+                // Nested blockquotes
                 html = html.replace(/^(>+) (.+)$/gm, (match, arrows, content) => {
                     const level = arrows.length;
                     return `<blockquote style="margin-left:${level * 1.5}em; border-left:${level > 1 ? '3px' : '5px'} solid var(--accent-color);">${content}</blockquote>`;
                 });
 
-                // Unordered list
-                html = html.replace(/^[*+-] (.+)$/gm, '<li>$1</li>');
-                html = html.replace(/(<li>[\s\S]*?<\/li>)/g, (match) => {
-                    if (!match.includes('class="ordered-item"')) return match;
-                    return match;
-                });
-                html = html.replace(/((?:<li>(?!.*ordered-item).*<\/li>\n?)+)/g, '<ul>$1</ul>');
+                // Unordered list - sadece - * + ile başlayanlar
+                html = html.replace(/^[ \t]*[-*+] (.+)$/gm, '<li class="ul-item">$1</li>');
+                html = html.replace(/(<li class="ul-item">.*<\/li>\n?)+/g, '<ul>$&</ul>');
+                html = html.replace(/ class="ul-item"/g, '');
 
                 // Ordered list
-                html = html.replace(/^\d+\. (.+)$/gm, '<li class="ordered-item">$1</li>');
-                html = html.replace(/((?:<li class="ordered-item">.*<\/li>\n?)+)/g, '<ol>$1</ol>');
-                html = html.replace(/ class="ordered-item"/g, '');
+                html = html.replace(/^[ \t]*\d+\. (.+)$/gm, '<li class="ol-item">$1</li>');
+                html = html.replace(/(<li class="ol-item">.*<\/li>\n?)+/g, '<ol>$&</ol>');
+                html = html.replace(/ class="ol-item"/g, '');
 
                 return html;
             }
