@@ -78,12 +78,74 @@ $$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$
 
 ## 🛠️ Built With
 
-- [Mermaid.js](https://mermaid.js.org/) — Diagram rendering
+- [Mermaid.js v11](https://mermaid.js.org/) — Diagram rendering
 - [KaTeX](https://katex.org/) — Math formula rendering
 - Vanilla HTML / CSS / JavaScript
+
+---
+
+## 🌟 Advanced Features
+
+### Turkish Character Support
+- Full Turkish character support in Mermaid diagrams
+- Automatic sanitization: `ş→s`, `ğ→g`, `ı→i`, `ç→c`, `ö→o`, `ü→u`
+- Works in node labels, participants, and sequence diagrams
+
+### Nested Blockquotes
+```markdown
+> Level 1 quote
+>> Level 2 nested quote
+>>> Level 3 deeply nested quote
+```
+
+### Enhanced List Parsing
+- Proper unordered list (`-`, `*`, `+`) support
+- Ordered list (`1.`, `2.`, etc.) support
+- Indented lists with tabs/spaces
+- No conflicts between list types
+
+### Smart Mermaid Rendering
+- Map-based storage preserves newlines
+- No HTML encoding issues
+- Fast rendering with Mermaid v11
+- Error handling with Turkish messages
+
+---
+
+## 🔧 Technical Details
+
+### Architecture
+- **Single-file design**: Everything in `index.html`
+- **Map-based Mermaid storage**: Prevents newline loss
+- **DOM API parsing**: Preserves whitespace
+- **Debounced rendering**: Optimized performance
+
+### Browser Compatibility
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+
+### Performance Features
+- Debounced input handling (100ms)
+- Auto-save every 30 seconds
+- Lazy Mermaid rendering
+- Efficient syntax highlighting
 
 ---
 
 ## 📄 License
 
 MIT — free to use, modify, and distribute.
+
+---
+
+## 🤝 Contributing
+
+Feel free to submit issues and enhancement requests!
+
+---
+
+**Made with ❤️ for the Markdown community**
+Feel free to use and modify as needed!
+
