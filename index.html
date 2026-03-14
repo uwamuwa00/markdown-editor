@@ -132,7 +132,49 @@
             flex: 1;
             overflow: hidden;
             position: relative;
+            gap: 0;
         }
+
+        .panel-divider {
+            width: 1px;
+            background: var(--border-color);
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .panel-divider::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1px;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                transparent,
+                var(--border-color) 10%,
+                var(--border-color) 90%,
+                transparent
+            );
+        }
+
+        /* Light mode */
+.editor-panel {
+    background-color: var(--bg-primary);
+}
+
+.preview-panel {
+    background-color: var(--bg-secondary);
+}
+
+/* Dark mode — editor slightly darker, preview slightly lighter */
+[data-theme="dark"] .editor-panel {
+    background-color: #161616;
+}
+
+[data-theme="dark"] .preview-panel {
+    background-color: #1e1e1e;
+}
 
         .editor-panel, .preview-panel {
             flex: 1;
@@ -140,6 +182,30 @@
             flex-direction: column;
             overflow: hidden;
             transition: var(--transition);
+        }
+
+        .editor-textarea {
+            flex: 1;
+            width: 100%;
+            padding: 20px;
+            border: none;
+            outline: none;
+            background-color: transparent;
+            color: var(--text-primary);
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            scroll-behavior: smooth;
+        }
+
+        .preview-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: transparent;
+            color: var(--text-primary);
+            scroll-behavior: smooth;
         }
 
         .panel-header {
@@ -165,30 +231,6 @@
             display: flex;
             gap: 12px;
             align-items: center;
-        }
-
-        .editor-textarea {
-            flex: 1;
-            width: 100%;
-            padding: 20px;
-            border: none;
-            outline: none;
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.6;
-            resize: none;
-            scroll-behavior: smooth;
-        }
-
-        .preview-content {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            scroll-behavior: smooth;
         }
 
         .stats {
@@ -731,6 +773,7 @@
             </div>
             <div class="toolbar-group">
                 <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">🌙/☀️</button>
+                <button onclick="toggleSpellcheck()" id="spellcheckBtn" title="Toggle Spellcheck">ABC</button>
             </div>
         </div>
         
@@ -743,9 +786,9 @@
                         <button class="fullscreen-btn" onclick="toggleFullscreen('editor')" title="Fullscreen Editor">🔍</button>
                     </div>
                 </div>
-                <textarea class="editor-textarea" id="editor" placeholder="Start typing your Markdown here..."></textarea>
+                <textarea class="editor-textarea" id="editor" placeholder="Start typing your Markdown here..." spellcheck="false"></textarea>
             </div>
-            
+            <div class="panel-divider"></div>
             <div class="preview-panel" id="previewPanel">
                 <div class="panel-header">
                     <span class="panel-title">👁️ Preview</span>
@@ -890,18 +933,41 @@
             parse(text) {
                 if (!text.trim()) return '';
 
-                // Her parse'da store'u temizle (eski diyagramlar silinsin)
                 mermaidStore.clear();
+
+                const latexStore = new Map();
+                let latexIdx = 0;
+                text = text.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
+                    const key = 'LATEXBLOCK' + latexIdx++ + 'XEND';
+                    try {
+                        latexStore.set(key, katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false }));
+                    } catch(e) {
+                        latexStore.set(key, '<span class="katex-error">LaTeX Error: ' + formula + '</span>');
+                    }
+                    return key;
+                });
+                text = text.replace(/\$([^$\n]+?)\$/g, (match, formula) => {
+                    const key = 'LATEXINLINE' + latexIdx++ + 'XEND';
+                    try {
+                        latexStore.set(key, katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false }));
+                    } catch(e) {
+                        latexStore.set(key, '<span class="katex-error">LaTeX Error: ' + formula + '</span>');
+                    }
+                    return key;
+                });
 
                 let html = '<p>' + text + '</p>';
                 html = this.parseCodeBlocks(html);
-                html = this.parseLatexFormulas(html);
                 html = this.parseTables(html);
                 html = this.parseLists(html);
 
                 for (const rule of this.rules) {
                     html = html.replace(rule.pattern, rule.replacement);
                 }
+
+                latexStore.forEach((rendered, key) => {
+                    html = html.split(key).join(rendered);
+                });
 
                 // Clean up
                 html = html.replace(/<p><\/p>/g, '');
@@ -967,24 +1033,6 @@
                     tableHTML += '</tbody></table>';
                     return tableHTML;
                 });
-            }
-
-            parseLatexFormulas(html) {
-                html = html.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
-                    try {
-                        return katex.renderToString(formula.trim(), { displayMode: true });
-                    } catch (e) {
-                        return `<span class="katex-error">LaTeX Error: ${formula}</span>`;
-                    }
-                });
-                html = html.replace(/\$([^$\n]+?)\$/g, (match, formula) => {
-                    try {
-                        return katex.renderToString(formula.trim(), { displayMode: false });
-                    } catch (e) {
-                        return `<span class="katex-error">LaTeX Error: ${formula}</span>`;
-                    }
-                });
-                return html;
             }
 
             parseLists(html) {
@@ -1768,6 +1816,15 @@
             const markdown = app.generateTableMarkdown();
             app.replaceSelection(markdown);
             closeTableModal();
+        }
+
+        function toggleSpellcheck() {
+            const editor = document.getElementById('editor');
+            const btn = document.getElementById('spellcheckBtn');
+            const isOn = editor.getAttribute('spellcheck') === 'true';
+            editor.setAttribute('spellcheck', isOn ? 'false' : 'true');
+            btn.style.textDecoration = isOn ? 'line-through' : 'none';
+            btn.title = isOn ? 'Spellcheck: Off' : 'Spellcheck: On';
         }
 
         function exportMarkdown() {
