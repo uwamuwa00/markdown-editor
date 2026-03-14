@@ -1,274 +1,246 @@
-# Code Structure Analysis
+# Code Structure
 
 ## File Overview
-- **Single file application**: `index.html` (47KB)
-- **Self-contained**: No external dependencies
-- **Architecture**: Component-based with separation of concerns
 
-## HTML Structure (Lines 1-200)
+- **Single file application**: `index.html` (~50KB)
+- **Self-contained**: No build step, no npm, no local dependencies
+- **CDN dependencies**: Mermaid.js v11, KaTeX 0.16.9
+- **Architecture**: Two-class component model + global function layer
 
-```html
-<!DOCTYPE html>
-<html lang="tr">
+---
+
+## HTML Structure
+
+```
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Markdown Editor</title>
-    <style>
-        /* CSS Variables and theming */
-        :root { /* Light theme variables */ }
-        [data-theme="dark"] { /* Dark theme variables */ }
-        
-        /* Base styles */
-        body { /* Layout and typography */ }
-        .container { /* Flex container */ }
-        
-        /* Toolbar styles */
-        .toolbar { /* Top toolbar */ }
-        .toolbar-group { /* Button groups */ }
-        
-        /* Panel styles */
-        .content { /* Split layout */ }
-        .editor-panel, .preview-panel { /* Side panels */ }
-        .panel-header { /* Panel headers */ }
-        
-        /* Content styles */
-        .editor-textarea { /* Text editor */ }
-        .preview-content { /* Preview area */ }
-        
-        /* Markdown rendering styles */
-        .preview-content h1, h2, h3 { /* Header styles */ }
-        .preview-content code, pre { /* Code styling */ }
-        .preview-content table { /* Table styling */ }
-        
-        /* Syntax highlighting */
-        .keyword, .string, .number { /* Syntax colors */ }
-        
-        /* UI states */
-        .fullscreen, .hidden { /* State classes */ }
-        
-        /* Responsive design */
-        @media (max-width: 768px) { /* Mobile styles */ }
-        
-        /* Custom scrollbar */
-        ::-webkit-scrollbar { /* Scrollbar styling */ }
-        
-        /* Status bar and toast */
-        .status-bar, .toast { /* UI components */ }
-    </style>
+  <style>                        CSS variables, layout, theming, components
+  </style>
 </head>
 <body>
-    <!-- Main container -->
-    <div class="container">
-        <!-- Toolbar with formatting buttons -->
-        <div class="toolbar">
-            <div class="toolbar-group">
-                <button onclick="insertMarkdown('**', '**')">**Bold**</button>
-                <button onclick="insertMarkdown('*', '*')">*Italic*</button>
-                <!-- More buttons... -->
-            </div>
-            <!-- More toolbar groups... -->
-        </div>
-        
-        <!-- Split content area -->
-        <div class="content">
-            <!-- Editor panel -->
-            <div class="editor-panel">
-                <div class="panel-header">
-                    <span class="panel-title">📝 Markdown Editor</span>
-                    <div class="panel-controls">
-                        <span class="stats">0 chars | 0 words | 0 lines</span>
-                        <button onclick="toggleFullscreen('editor')">🔍</button>
-                    </div>
-                </div>
-                <textarea id="editor" placeholder="Start typing..."></textarea>
-            </div>
-            
-            <!-- Preview panel -->
-            <div class="preview-panel">
-                <div class="panel-header">
-                    <span class="panel-title">👁️ Preview</span>
-                    <div class="panel-controls">
-                        <button onclick="toggleFullscreen('preview')">🔍</button>
-                    </div>
-                </div>
-                <div id="preview"></div>
-            </div>
-        </div>
-        
-        <!-- Status bar -->
-        <div class="status-bar">
-            <div class="status-left">
-                <span id="saveStatus">✓ Saved</span>
-                <span id="cursorPos">Line 1, Col 1</span>
-            </div>
-            <div class="status-right">
-                <span id="lastSaved">Never</span>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Toast notification -->
-    <div class="toast" id="toast"></div>
+  <div class="container">
+    <div class="toolbar">        Formatting buttons, export, theme, spellcheck
+    <div class="content">
+      <div class="editor-panel"> Textarea (left)
+      <div class="panel-divider"> 1px vertical separator
+      <div class="preview-panel"> Rendered output (right)
+    <div class="status-bar">     Char/word/line count, cursor pos, save status
+  </div>
+  <div class="toast">            Notification overlay
+  <div class="modal-overlay" id="tableModal">    Table builder
+  <div class="modal-overlay" id="formulaModal">  Formula picker (V2)
+  <script>                       All JavaScript
 </body>
 ```
 
-## JavaScript Structure (Lines 201-1000+)
+---
 
-### Core Classes
+## CSS Architecture
 
-#### 1. MarkdownParser Class (Lines ~250-400)
+### Theme System
+```css
+:root { }                    /* Light mode variables */
+[data-theme="dark"] { }      /* Dark mode overrides */
+```
+
+Key variables: `--bg-primary`, `--bg-secondary`, `--bg-tertiary`, `--text-primary`, `--text-secondary`, `--border-color`, `--accent-color`
+
+Theme applied to `<html>` element via `document.documentElement.setAttribute('data-theme', ...)` — cascades to all elements including modals and KaTeX.
+
+### KaTeX Dark Mode Fix (V2)
+```css
+[data-theme="dark"] .katex,
+[data-theme="dark"] .katex * { color: var(--text-primary) !important; }
+[data-theme="dark"] .katex .frac-line { background: var(--text-primary) !important; }
+[data-theme="dark"] .katex svg path { fill: var(--text-primary) !important; }
+```
+Covers all KaTeX internals: text spans, SVG paths, fraction lines, root symbols.
+
+### Panel Layout (V2)
+```css
+.editor-panel  { background-color: var(--bg-primary); }
+.preview-panel { background-color: var(--bg-secondary); }
+.panel-divider { width: 1px; background: var(--border-color); }
+
+[data-theme="dark"] .editor-panel  { background-color: #161616; }
+[data-theme="dark"] .preview-panel { background-color: #1e1e1e; }
+```
+
+### Modal System
+```css
+.modal-overlay        { opacity: 0; visibility: hidden; pointer-events: none; }
+.modal-overlay.show   { opacity: 1; visibility: visible; pointer-events: all; }
+```
+Both Table Builder and Formula Picker use this same pattern.
+
+---
+
+## JavaScript Architecture
+
+### Class 1 — MarkdownParser
+
+Responsible for converting raw Markdown text to HTML.
+
 ```javascript
 class MarkdownParser {
     constructor() {
-        this.rules = [
-            // Parsing rules in priority order
-            { pattern: /^###### (.*$)/gm, replacement: '<h6>$1</h6>' },
-            { pattern: /^##### (.*$)/gm, replacement: '<h5>$1</h5>' },
-            // ... more rules
-        ];
+        this.rules = [ /* priority-ordered regex rules */ ]
     }
 
     parse(text) {
-        // Main parsing logic
-        // 1. Handle code blocks first
-        // 2. Handle tables
-        // 3. Handle lists
-        // 4. Apply other rules
-        // 5. Clean up HTML structure
+        // 1. Extract LaTeX → placeholder Map  (before markdown rules — V2)
+        // 2. parseCodeBlocks()                (Mermaid + code highlight)
+        // 3. parseTables()
+        // 4. parseLists()
+        // 5. Apply this.rules                 (headings, bold, italic, links...)
+        // 6. Restore LaTeX from placeholder Map
+        // 7. HTML cleanup
     }
 
-    parseCodeBlocks(html) {
-        // Extract and highlight code blocks
-        // Support for multiple languages
-    }
-
-    parseTables(html) {
-        // Convert markdown tables to HTML
-        // Handle headers and separators
-    }
-
-    parseLists(html) {
-        // Convert markdown lists to HTML
-        // Support ordered and unordered lists
-    }
-
-    highlightSyntax(code, language) {
-        // Syntax highlighting for:
-        // - JavaScript
-        // - Python  
-        // - CSS
-        // - HTML
-    }
+    parseCodeBlocks(html)    // Mermaid → mermaidStore Map + code highlight
+    parseTables(html)        // Markdown tables → <table>
+    parseLists(html)         // ul/ol with class-based conflict prevention
+    highlightSyntax(code, lang)  // JS / Python / CSS / HTML coloring
 }
 ```
 
-#### 2. MarkdownEditor Class (Lines ~400-800)
+**Parsing rule priority** (inside `this.rules`):
+1. Headings H6 → H1 (most specific first)
+2. Bold+italic, bold, italic
+3. Strikethrough
+4. Inline code
+5. Links, images
+6. HR
+7. Paragraph breaks (`\n\n` → `</p><p>`)
+8. Line breaks (`\n` → `<br>`)
+
+---
+
+### Class 2 — MarkdownEditor
+
+Responsible for UI state, event handling, toolbar actions, persistence.
+
 ```javascript
 class MarkdownEditor {
     constructor() {
-        this.editor = document.getElementById('editor');
-        this.preview = document.getElementById('preview');
-        this.parser = new MarkdownParser();
-        this.saveTimer = null;
-        this.debounceTimer = null;
+        this.editor  = document.getElementById('editor')
+        this.preview = document.getElementById('preview')
+        this.parser  = new MarkdownParser()
+        this.saveTimer    = null
+        this.debounceTimer = null
+        this.currentRows  = 3
+        this.currentCols  = 3
     }
 
-    init() {
-        // Initialize application
-        this.loadFromStorage();
-        this.setupEventListeners();
-        this.setupKeyboardShortcuts();
-        this.updatePreview();
-        this.updateStats();
-    }
+    // Lifecycle
+    init()
+    loadFromStorage()
+    setupEventListeners()
+    setupKeyboardShortcuts()   // Ctrl+B/I/K/H/S
 
-    setupEventListeners() {
-        // Input events with debouncing
-        // Keyboard shortcuts
-        // Navigation prevention
-        // Auto-save scheduling
-    }
+    // Rendering
+    updatePreview()
+    renderMermaidDiagrams()    // reads from mermaidStore Map
+    updateStats()
+    updateCursorPosition()
 
-    setupKeyboardShortcuts() {
-        // Ctrl+B: Bold
-        // Ctrl+I: Italic
-        // Ctrl+K: Link
-        // Ctrl+H: Heading
-        // Ctrl+S: Save
-    }
+    // Toolbar actions
+    insertMarkdown(before, after)
+    insertHeading()
+    insertCode()
+    insertCodeBlock()
+    insertLink()
+    insertImage()
+    insertTable()              // opens tableModal
+    insertList(type)
+    insertQuote()
+    insertHR()
+    insertMermaid()            // inserts default flowchart snippet
 
-    handleInput() {
-        // Debounced input processing
-        // Update preview
-        // Update statistics
-        // Trigger auto-save
-    }
+    // Table builder
+    showTableModal()
+    updateTablePreview()
+    generateTableMarkdown()
 
-    autoSave() {
-        // Save to localStorage
-        // Update status indicators
-        // Handle errors
-    }
+    // Persistence
+    autoSave()
+    showToast(message, type)
 
-    // UI Methods
-    updatePreview() { /* Render markdown */ }
-    updateStats() { /* Update counters */ }
-    updateCursorPosition() { /* Track cursor */ }
-    
-    // Formatting Methods
-    insertMarkdown(before, after) { /* Insert formatting */ }
-    insertHeading() { /* Add/modify heading */ }
-    insertCode() { /* Inline code */ }
-    insertCodeBlock() { /* Code block */ }
-    insertLink() { /* Link insertion */ }
-    insertTable() { /* Table template */ }
-    
-    // List Methods
-    continueList() { /* Auto-continue lists */ }
-    getCurrentLine() { /* Get current line */ }
-    
-    // Utility Methods
-    replaceCurrentLine(newLine) { /* Replace line */ }
-    replaceSelection(replacement) { /* Replace selection */ }
-    clearContent() { /* Clear all content */ }
-    showToast(message, type) { /* Show notification */ }
+    // Utilities
+    replaceSelection(replacement)
+    replaceCurrentLine(newLine)
+    clearContent()
+    initializeMermaid()
 }
 ```
 
-### Global Functions (Lines ~800-900)
+---
+
+### Global Functions
+
+#### Toolbar delegates (call app.method)
 ```javascript
-// Toolbar button handlers
-function insertMarkdown(before, after) { app.insertMarkdown(before, after); }
-function insertHeading() { app.insertHeading(); }
-function insertCode() { app.insertCode(); }
-// ... more handlers
-
-// UI functions
-function toggleTheme() { /* Theme switching */ }
-function toggleFullscreen(panel) { /* Fullscreen mode */ }
-
-// Export functions
-function exportMarkdown() { /* Export .md file */ }
-function exportHTML() { /* Export .html file */ }
+insertMarkdown(before, after)
+insertHeading()
+insertCode()
+insertCodeBlock()
+insertLink()
+insertImage()
+insertTable()
+insertList(type)
+insertQuote()
+insertHR()
+insertMermaid()
+clearContent()
 ```
 
-### Application Initialization (Lines ~900-950)
+#### UI
 ```javascript
-document.addEventListener('DOMContentLoaded', () => {
-    app = new MarkdownEditor();
-    console.log('Professional Markdown Editor initialized successfully');
-});
+toggleTheme()          // [data-theme] toggle + localStorage + re-render
+toggleFullscreen(panel)
+toggleSpellcheck()     // V2 — toggles spellcheck attr + ABC button style
 ```
+
+#### Table modal
+```javascript
+updateTableSize(type, delta)
+addRow()
+addCol()
+closeTableModal()
+insertTableToEditor()
+```
+
+#### Export
+```javascript
+exportMarkdown()   // downloads .md
+exportHTML()       // downloads standalone .html
+```
+
+#### Formula Picker (V2)
+```javascript
+openFormulaPopup()     // shows formulaModal, resets state
+closeFormulaPopup()    // hides formulaModal
+fpShowCategory(id, tabEl)   // renders card grid for selected category
+fpSelectCard(cardEl, latex) // loads latex into input + live preview
+fpLiveUpdate()         // re-renders KaTeX preview from input value
+insertFormula()        // wraps in $...$ or $$...$$ + calls app.replaceSelection()
+```
+
+---
+
+### Global State
+
+```javascript
+const mermaidStore = new Map()   // id → raw Mermaid code (newline-safe)
+let app                          // MarkdownEditor instance
+let fpSelectedCard = null        // currently selected formula card element
+const FP_CATEGORIES = [...]      // formula database — 8 categories, 90+ formulas
+```
+
+---
 
 ## Key Design Patterns
 
-### 1. **Component Architecture**
-- Separation of parsing logic (MarkdownParser)
-- UI management (MarkdownEditor)
-- Event handling delegation
-
-### 2. **Debouncing Pattern**
+### 1. Debounced Input
 ```javascript
 handleInput() {
     clearTimeout(this.debounceTimer);
@@ -280,42 +252,102 @@ handleInput() {
 }
 ```
 
-### 3. **Auto-save Strategy**
-- Immediate save on important changes
-- Periodic save every 30 seconds
-- Status indicators for user feedback
+### 2. Map-based Mermaid Storage
+`outerHTML` serialization loses newlines. Solution: store raw Mermaid code in a Map, write only an empty `<div id="...">` to HTML, read from Map at render time.
+```javascript
+mermaidStore.set(id, code.trim());
+return `<div class="mermaid-wrapper" id="${id}"></div>`;
+// later:
+mermaidStore.forEach(async (code, id) => {
+    const { svg } = await mermaid.render(svgId, code);
+    wrapper.innerHTML = svg;
+});
+```
 
-### 4. **Regex-based Parsing**
-- Priority-based rule application
-- Special handling for complex structures
-- HTML cleanup and validation
+### 3. Placeholder-based LaTeX Parsing (V2)
+Markdown `_italic_` rule was mutating LaTeX subscripts (`x_i` → broken). Fix: extract LaTeX into a placeholder Map before any markdown rules run, restore after.
+```javascript
+// Before markdown rules:
+text = text.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
+    const key = 'LATEXBLOCK' + latexIdx++ + 'XEND';
+    latexStore.set(key, katex.renderToString(formula.trim(), { displayMode: true }));
+    return key;
+});
+// After all markdown rules:
+latexStore.forEach((rendered, key) => {
+    html = html.split(key).join(rendered);
+});
+```
 
-### 5. **Theme System**
-- CSS variables for easy theming
-- localStorage persistence
-- Smooth transitions
+### 4. Unified Modal Pattern
+Both Table Builder and Formula Picker share the same CSS show/hide mechanism:
+```javascript
+document.getElementById('formulaModal').classList.add('show');    // open
+document.getElementById('formulaModal').classList.remove('show'); // close
+```
+Overlay click and ESC key close any open modal.
 
-## Performance Optimizations
+### 5. Class-based List Conflict Prevention
+Unordered and ordered list items are tagged with temporary classes before wrapping, preventing regex cross-contamination:
+```javascript
+// ul-item → wrap in <ul>
+// ol-item → wrap in <ol>
+// class attribute stripped after wrapping
+```
 
-1. **Debounced Input**: Prevents excessive re-renders
-2. **Lazy Loading**: Images load on demand
-3. **Efficient Parsing**: Optimized regex patterns
-4. **Memory Management**: Proper cleanup and garbage collection
-5. **CSS Optimizations**: Hardware-accelerated animations
+### 6. Theme Cascade
+Theme applied to `<html>` root element — `[data-theme="dark"]` selector reaches all nested elements including dynamically created modal content and KaTeX-rendered HTML.
 
-## Error Handling
+---
 
-1. **localStorage Errors**: Graceful fallback
-2. **Navigation Prevention**: Warn on unsaved changes
-3. **Parsing Errors**: Safe HTML generation
-4. **Export Failures**: User notifications
+## Initialization Flow
 
-## Browser Compatibility
+```
+DOMContentLoaded
+  └── app = new MarkdownEditor()
+        ├── loadFromStorage()       restore last session
+        ├── setupEventListeners()   input, scroll, click
+        ├── setupKeyboardShortcuts()
+        ├── updatePreview()         initial render
+        └── updateStats()           initial counts
 
-- **Modern Features**: Uses ES6 classes, template literals
-- **Fallback Support**: Graceful degradation
-- **Cross-browser Testing**: Chrome, Firefox, Safari, Edge
-- **Mobile Support**: Responsive design with touch support
+  └── fpShowCategory('basic', firstTab)   formula picker grid pre-built
+  └── formulaModal overlay listener       ESC / overlay close
+  └── tableModal overlay listener
+```
 
-This structure ensures maintainability, performance, and extensibility while keeping everything in a single file.
-Feel free to use and modify as needed!
+---
+
+## File Size Budget
+
+| Section | Approx. lines |
+|---------|--------------|
+| CSS (styles) | ~700 |
+| HTML structure | ~120 |
+| MarkdownParser class | ~200 |
+| MarkdownEditor class | ~400 |
+| Formula picker data + functions | ~200 |
+| Global functions + init | ~150 |
+| **Total** | **~1800** |
+
+---
+
+## V2 Changes Summary
+
+| What changed | Where |
+|---|---|
+| `parse()` — LaTeX extracted before rules | MarkdownParser |
+| `parseLatexFormulas()` — removed (dead code) | MarkdownParser |
+| KaTeX dark mode CSS fix | `<style>` block |
+| Panel divider element | HTML structure |
+| Panel tone differentiation CSS | `<style>` block |
+| `formulaModal` HTML block | HTML structure |
+| `FP_CATEGORIES` data + all `fp*` functions | Global scope |
+| `toggleSpellcheck()` | Global functions |
+| `Σ Formula` toolbar button | HTML toolbar |
+| `ABC` spellcheck toolbar button | HTML toolbar |
+| `spellcheck="false"` on textarea | HTML |
+
+---
+
+*Last updated: March 2026*
